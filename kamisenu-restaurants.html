@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>神泉町エリアレストランマップ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: #f5f5f5;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        #map {
+            flex: 1;
+            height: 100%;
+        }
+        
+        .sidebar {
+            width: 350px;
+            background-color: white;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        
+        .legend {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .legend-title {
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            padding: 5px;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+        }
+        
+        .legend-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 10px;
+            border: 2px solid #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        
+        .restaurant-list {
+            padding: 20px;
+        }
+        
+        .restaurant-list-title {
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .restaurant-item {
+            background-color: #fafafa;
+            margin-bottom: 12px;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        
+        .restaurant-item:hover {
+            background-color: #e3f2fd;
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .restaurant-name {
+            font-weight: bold;
+            font-size: 15px;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .restaurant-category {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            color: white;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        
+        .restaurant-feature {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 5px;
+            line-height: 1.4;
+        }
+        
+        .restaurant-address {
+            font-size: 12px;
+            color: #888;
+        }
+        
+        .info-window {
+            max-width: 320px;
+            font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', sans-serif;
+        }
+        
+        .info-window-name {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        .info-window-category {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            color: white;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        .info-window-feature {
+            margin-bottom: 8px;
+            color: #555;
+            line-height: 1.4;
+        }
+        
+        .info-window-address {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .info-window-link {
+            color: #1976d2;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        
+        .info-window-link:hover {
+            text-decoration: underline;
+        }
+        
+        .filter-section {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            background-color: #f8f9fa;
+        }
+        
+        .filter-title {
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .filter-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .filter-option {
+            background-color: #e1f5fe;
+            color: #0277bd;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-weight: bold;
+        }
+        
+        .filter-option:hover {
+            background-color: #b3e5fc;
+        }
+        
+        .filter-option.active {
+            background-color: #1976d2;
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                max-height: 40vh;
+                order: 2;
+            }
+            
+            #map {
+                height: 60vh;
+                order: 1;
+            }
+            
+            .header h1 {
+                font-size: 20px;
+            }
+            
+            .header p {
+                font-size: 12px;
+            }
+        }
+        
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🍽️ 神泉町エリアレストランマップ</h1>
+        <p>美味しいお店を見つけよう！ クリックして詳細情報を確認できます</p>
+    </div>
+    
+    <div class="container">
+        <div class="sidebar">
+            <div class="filter-section">
+                <div class="filter-title">🔍 カテゴリーフィルター</div>
+                <div class="filter-options" id="filter-options">
+                    <!-- フィルターオプションはJavaScriptで動的に追加 -->
+                </div>
+            </div>
+            
+            <div class="legend">
+                <div class="legend-title">🎨 ジャンル別色分け</div>
+                <div id="legend-content">
+                    <!-- 凡例はJavaScriptで動的に追加 -->
+                </div>
+            </div>
+            
+            <div class="restaurant-list">
+                <div class="restaurant-list-title">📍 レストラン一覧</div>
+                <div id="restaurant-list">
+                    <div class="loading">読み込み中...</div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="map"></div>
+    </div>
+    
+    <script>
+        // 神泉駅の座標
+        const KAMISENU_LAT = 35.6563;
+        const KAMISENU_LON = 139.6963;
+        
+        // 神泉町エリアのレストランデータ
+        const restaurants = [
+            {"店名":"神泉ホルモン","特徴":"たべログ１００名店の常連様 人気のホルモン焼肉","住所":"東京都渋谷区神泉町12-4","エリア":"神泉町","アカウント":"http://www.sanbyakuya.com/","業態":"焼肉 居酒屋","緯度":35.6555,"経度":139.6952},
+            {"店名":"かしわビストロバンバン","特徴":"コスパ抜群のビストロを裏渋谷で","住所":"東京都渋谷区神泉町2-8","エリア":"神泉町","アカウント":"","業態":"ビストロ 居酒屋","緯度":35.6568,"経度":139.6955},
+            {"店名":"麺の坊 砦","特徴":"ラーメン屋さんながら、おにぎりが有名なお店 明太ソースにつけるおにぎりが◎","住所":"東京都渋谷区神泉町２０−２３ セルリアンビル １階","エリア":"神泉町","アカウント":"","業態":"ラーメン おにぎり","緯度":35.6571,"経度":139.6948},
+            {"店名":"海鮮処 向井","特徴":"この値段でこの海鮮丼がたべられるとは・・・お茶漬けも最幸","住所":"〒150-0045 東京都渋谷区神泉町１５−６","エリア":"神泉町","アカウント":"https://tabelog.com/tokyo/A1303/A130301/13265340/","業態":"海鮮","緯度":35.6574,"経度":139.6951},
+            {"店名":"うさぎ","特徴":"都内一美味しいという人もいる担々麺のお店","住所":"〒150-0045 東京都渋谷区神泉町８−１３","エリア":"神泉町","アカウント":"","業態":"ラーメン 担々麺","緯度":35.6566,"経度":139.6949},
+            {"店名":"ツーピース","特徴":"ずっと行きたかったお店の代表格","住所":"〒150-0044 東京都渋谷区円山町２０−５ グランドネス渋谷 2F","エリア":"神泉町周辺","アカウント":"https://tabelog.com/tokyo/A1303/A130301/13292012/","業態":"居酒屋","緯度":35.6543,"経度":139.6942},
+            {"店名":"8jikai_shibuya","特徴":"クライナー¥250円で飲めるbar 隠れ家bar","住所":"東京都渋谷区円山町１−１６ しぶまる 館 3F","エリア":"神泉町周辺","アカウント":"","業態":"bar","緯度":35.6548,"経度":139.6938},
+            {"店名":"楽椿 （らくちん）","特徴":"コスパがいいのにフードもドリンクもかなりいい。","住所":"東京都渋谷区円山町２３−１０ 渋谷ＡＴビル 1F","エリア":"神泉町周辺","アカウント":"","業態":"和食居酒屋","緯度":35.6541,"経度":139.6945},
+            {"店名":"おさかなや魚魚権 神泉店","特徴":"魚介類が新鮮と好評で、その日のおすすめの魚介類の案内があり！","住所":"東京都渋谷区円山町２２−１４ 塙ビル 1F","エリア":"神泉町周辺","アカウント":"","業態":"海鮮 居酒屋","緯度":35.6544,"経度":139.6947},
+            {"店名":"きときと","特徴":"富山の厳選食材×居酒屋 4000～","住所":"〒150-0044 東京都渋谷区円山町５−１８ 道玄坂スクエア B1F","エリア":"神泉町周辺","アカウント":"","業態":"居酒屋","緯度":35.6552,"経度":139.6965},
+            {"店名":"Sta.","特徴":"渋谷美容室かと間違えるくらいお洒落な和食屋さん 昼1500～ 夜6000～","住所":"150-0044 東京都渋谷区円山町１１−７","エリア":"神泉町周辺","アカウント":"","業態":"和食 グルテンフリー","緯度":35.6549,"経度":139.6941},
+            {"店名":"ワイン酒場　UiUi","特徴":"裏渋通りにある お洒落な居酒屋 半テラス席👍️ 4000～","住所":"〒150-0044 東京都渋谷区円山町２３−９ 平井ビル","エリア":"神泉町周辺","アカウント":"","業態":"ビストロ 居酒屋","緯度":35.6540,"経度":139.6944},
+            {"店名":"IGOR COSY 神泉","特徴":"和食×フレンチ 料理の中で【雲丹のせシューマイ】は必食！","住所":"東京都渋谷区円山町18-6 藤田ビル 1F","エリア":"神泉町周辺","アカウント":"https://tabelog.com/tokyo/A1303/A130301/13254085/","業態":"居酒屋 和食×フレンチ","緯度":35.6546,"経度":139.6940},
+            {"店名":"定食サトウ","特徴":"隠れ定食屋","住所":"〒150-0044 東京都渋谷区円山町１３−１９ メゾン 若林 B103","エリア":"神泉町周辺","アカウント":"","業態":"定食屋","緯度":35.6547,"経度":139.6943},
+            {"店名":"neo （ネーオ）","特徴":"季節ごとに変わる絶品料理＋ワイン いつ通っても、人でごった返している人気店","住所":"東京都渋谷区円山町15-6","エリア":"神泉町周辺","アカウント":"https://tabelog.com/tokyo/A1303/A130301/13262588/","業態":"立ち飲み フレンチ","緯度":35.6545,"経度":139.6939}
+        ];
+        
+        // カテゴリを設定する関数
+        function categorizeGenre(genre) {
+            if (genre.includes('そば')) {
+                return 'そば';
+            } else if (genre.includes('ラーメン') || genre.includes('担々麺')) {
+                return 'ラーメン';
+            } else if (genre.includes('カレー')) {
+                return 'カレー';
+            } else if (genre.includes('ビストロ') || genre.includes('フレンチ')) {
+                return 'ビストロ・フレンチ';
+            } else if (genre.includes('海鮮')) {
+                return '海鮮';
+            } else if (genre.toLowerCase().includes('bar') || genre.includes('シーシャ')) {
+                return 'バー・カフェ';
+            } else if (genre.includes('焼肉')) {
+                return '焼肉';
+            } else if (genre.includes('和食') && genre.includes('居酒屋')) {
+                return '和食居酒屋';
+            } else if (genre.includes('居酒屋')) {
+                return '居酒屋';
+            } else if (genre.includes('和食')) {
+                return '和食';
+            } else if (genre.includes('定食')) {
+                return '定食';
+            } else {
+                return 'その他';
+            }
+        }
+        
+        // カテゴリごとの色を定義
+        const categoryColors = {
+            'そば': '#2ecc71',
+            'ラーメン': '#1e8449', 
+            'カレー': '#f39c12',
+            'ビストロ・フレンチ': '#3498db',
+            '海鮮': '#16a085',
+            'バー・カフェ': '#9b59b6',
+            '焼肉': '#e74c3c',
+            '和食居酒屋': '#a93226',
+            '居酒屋': '#e57373',
+            '和食': '#795548',
+            '定食': '#1a237e',
+            'その他': '#7f8c8d'
+        };
+        
+        // レストランデータにカテゴリを追加
+        restaurants.forEach(restaurant => {
+            restaurant.カテゴリ = categorizeGenre(restaurant.業態);
+        });
+        
+        // グローバル変数
+        let map;
+        let markers = [];
+        let activeInfoWindow = null;
+        let currentFilter = null;
+        
+        // Google Mapsの初期化
+        function initMap() {
+            // 神泉駅の座標
+            const kamisenuLatLng = { lat: KAMISENU_LAT, lng: KAMISENU_LON };
+            
+            // マップの作成
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: kamisenuLatLng,
+                zoom: 17,
+                mapTypeControl: true,
+                fullscreenControl: true,
+                streetViewControl: true,
+                styles: [
+                    {
+                        featureType: "poi",
+                        elementType: "labels",
+                        stylers: [{ visibility: "off" }]
+                    }
+                ]
+            });
+            
+            // 神泉駅のマーカー
+            new google.maps.Marker({
+                position: kamisenuLatLng,
+                map: map,
+                title: '神泉駅',
+                icon: {
+                    url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',
+                    scaledSize: new google.maps.Size(40, 40)
+                },
+                zIndex: 1000
+            });
+            
+            // 情報ウィンドウの準備
+            const infoWindow = new google.maps.InfoWindow();
+            
+            // 各レストランのマーカーを追加
+            restaurants.forEach((restaurant, index) => {
+                // マーカーの位置
+                const position = { 
+                    lat: restaurant.緯度, 
+                    lng: restaurant.経度 
+                };
+                
+                // カテゴリの色を取得
+                const color = categoryColors[restaurant.カテゴリ] || '#7f8c8d';
+                
+                // マーカーを作成
+                const marker = new google.maps.Marker({
+                    position: position,
+                    map: map,
+                    title: restaurant.店名,
+                    label: {
+                        text: restaurant.店名.length > 6 ? restaurant.店名.substring(0, 6) + '...' : restaurant.店名,
+                        color: 'white',
+                        fontSize: '11px',
+                        fontWeight: 'bold'
+                    },
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        fillColor: color,
+                        fillOpacity: 0.9,
+                        strokeWeight: 2,
+                        strokeColor: '#ffffff',
+                        scale: 15
+                    },
+                    restaurant: restaurant,
+                    index: index
+                });
+                
+                // 情報ウィンドウの内容
+                let link = '';
+                if (restaurant.アカウント && restaurant.アカウント.startsWith('http')) {
+                    link = `<a href="${restaurant.アカウント}" class="info-window-link" target="_blank">詳細を見る →</a>`;
+                }
+                
+                const content = `
+                    <div class="info-window">
+                        <div class="info-window-name">${restaurant.店名}</div>
+                        <div class="info-window-category" style="background-color: ${color}">${restaurant.カテゴリ}</div>
+                        <div class="info-window-feature"><strong>特徴:</strong> ${restaurant.特徴}</div>
+                        <div class="info-window-address"><strong>住所:</strong> ${restaurant.住所}</div>
+                        ${link}
+                    </div>
+                `;
+                
+                // マーカークリックで情報ウィンドウを表示
+                marker.addListener('click', () => {
+                    if (activeInfoWindow) {
+                        activeInfoWindow.close();
+                    }
+                    infoWindow.setContent(content);
+                    infoWindow.open(map, marker);
+                    activeInfoWindow = infoWindow;
+                    
+                    // サイドバーのアイテムをハイライト
+                    highlightListItem(index);
+                });
+                
+                markers.push(marker);
+            });
+            
+            // UI要素を初期化
+            createLegend();
+            createFilterOptions();
+            displayRestaurantList();
+        }
+        
+        // 凡例を作成
+        function createLegend() {
+            const legendContent = document.getElementById('legend-content');
+            const categories = Array.from(new Set(restaurants.map(r => r.カテゴリ))).sort();
+            
+            categories.forEach(category => {
+                const item = document.createElement('div');
+                item.className = 'legend-item';
+                
+                const colorDiv = document.createElement('div');
+                colorDiv.className = 'legend-color';
+                colorDiv.style.backgroundColor = categoryColors[category];
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = category;
+                
+                item.appendChild(colorDiv);
+                item.appendChild(nameSpan);
+                legendContent.appendChild(item);
+            });
+        }
+        
+        // フィルターオプションを作成
+        function createFilterOptions() {
+            const filterOptions = document.getElementById('filter-options');
+            const categories = ['すべて', ...Array.from(new Set(restaurants.map(r => r.カテゴリ))).sort()];
+            
+            categories.forEach(category => {
+                const button = document.createElement('button');
+                button.className = 'filter-option';
+                if (category === 'すべて') {
+                    button.classList.add('active');
+                }
+                button.textContent = category;
+                
+                button.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-option').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    button.classList.add('active');
+                    
+                    filterRestaurants(category === 'すべて' ? null : category);
+                });
+                
+                filterOptions.appendChild(button);
+            });
+        }
+        
+        // レストランリストを表示
+        function displayRestaurantList(filter = null) {
+            const list = document.getElementById('restaurant-list');
+            list.innerHTML = '';
+            
+            const filteredRestaurants = filter 
+                ? restaurants.filter(r => r.カテゴリ === filter) 
+                : restaurants;
+            
+            filteredRestaurants.forEach((restaurant, originalIndex) => {
+                const realIndex = restaurants.indexOf(restaurant);
+                const item = document.createElement('div');
+                item.className = 'restaurant-item';
+                item.dataset.index = realIndex;
+                
+                const color = categoryColors[restaurant.カテゴリ];
+                item.style.borderLeftColor = color;
+                
+                item.innerHTML = `
+                    <div class="restaurant-name">${restaurant.店名}</div>
+                    <div class="restaurant-category" style="background-color: ${color}">${restaurant.カテゴリ}</div>
+                    <div class="restaurant-feature">${restaurant.特徴}</div>
+                    <div class="restaurant-address">${restaurant.住所}</div>
+                `;
+                
+                // クリックイベント
+                item.addEventListener('click', () => {
+                    const marker = markers[realIndex];
+                    
+                    // マップを該当位置に移動
+                    map.setCenter(marker.getPosition());
+                    map.setZoom(18);
+                    
+                    // マーカーをクリック
+                    google.maps.event.trigger(marker, 'click');
+                });
+                
+                list.appendChild(item);
+            });
+        }
+        
+        // リストアイテムをハイライト
+        function highlightListItem(index) {
+            const items = document.querySelectorAll('.restaurant-item');
+            items.forEach(item => {
+                item.style.backgroundColor = '';
+                item.style.transform = '';
+            });
+            
+            const selectedItem = document.querySelector(`.restaurant-item[data-index="${index}"]`);
+            if (selectedItem) {
+                selectedItem.style.backgroundColor = '#e3f2fd';
+                selectedItem.style.transform = 'translateX(5px)';
+                selectedItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+        
+        // レストランをフィルタリング
+        function filterRestaurants(category) {
+            currentFilter = category;
+            
+            // マーカーの表示/非表示
+            markers.forEach(marker => {
+                const visible = !category || marker.restaurant.カテゴリ === category;
+                marker.setVisible(visible);
+            });
+            
+            // リストを更新
+            displayRestaurantList(category);
+        }
+        
+        // エラーハンドリング
+        window.addEventListener('error', function(e) {
+            console.error('エラーが発生しました:', e.error);
+            document.getElementById('restaurant-list').innerHTML = 
+                '<div style="text-align: center; padding: 20px; color: #666;">マップの読み込みに失敗しました。APIキーを確認してください。</div>';
+        });
+    </script>
+    
+    <!-- Google Maps API - ここにあなたのAPIキーを入力してください -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
+</body>
+</html>
