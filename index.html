@@ -144,6 +144,28 @@
         .restaurant-address {
             font-size: 12px;
             color: #888;
+            margin-bottom: 5px;
+        }
+        
+        .restaurant-link {
+            font-size: 11px;
+            margin-top: 5px;
+        }
+        
+        .restaurant-link a {
+            color: #1976d2;
+            text-decoration: none;
+            display: inline-block;
+            padding: 2px 6px;
+            background-color: #e3f2fd;
+            border-radius: 10px;
+            transition: all 0.2s;
+        }
+        
+        .restaurant-link a:hover {
+            background-color: #1976d2;
+            color: white;
+            text-decoration: none;
         }
         
         .info-window {
@@ -318,7 +340,7 @@
             {"店名":"ワイン酒場　UiUi","特徴":"裏渋通りにある お洒落な居酒屋 半テラス席👍️ 4000～","住所":"〒150-0044 東京都渋谷区円山町２３−９ 平井ビル","エリア":"神泉町周辺","アカウント":"","業態":"ビストロ 居酒屋","緯度":35.6540,"経度":139.6944},
             {"店名":"IGOR COSY 神泉","特徴":"和食×フレンチ 料理の中で【雲丹のせシューマイ】は必食！","住所":"東京都渋谷区円山町18-6 藤田ビル 1F","エリア":"神泉町周辺","アカウント":"https://tabelog.com/tokyo/A1303/A130301/13254085/","業態":"居酒屋 和食×フレンチ","緯度":35.6546,"経度":139.6940},
             {"店名":"定食サトウ","特徴":"隠れ定食屋","住所":"〒150-0044 東京都渋谷区円山町１３−１９ メゾン 若林 B103","エリア":"神泉町周辺","アカウント":"","業態":"定食屋","緯度":35.6547,"経度":139.6943},
-            {"店名":"neo （ネーオ）","特徴":"季節ごとに変わる絶品料理＋ワイン いつ通っても、人でごった返している人気店","住所":"東京都渋谷区円山町15-6","エリア":"神泉町周辺","アカウント":"https://tabelog.com/tokyo/A1303/A130301/13262588/","業態":"立ち飲み フレンチ","緯度":35.65754956347526,"経度":139.69437038131446}
+            {"店名":"neo （ネーオ）","特徴":"季節ごとに変わる絶品料理＋ワイン いつ通っても、人でごった返している人気店","住所":"東京都渋谷区円山町15-6","エリア":"神泉町周辺","アカウント":"https://tabelog.com/tokyo/A1303/A130301/13262588/","業態":"立ち飲み フレンチ","緯度":35.6545,"経度":139.6939}
         ];
         
         // カテゴリを設定する関数
@@ -551,15 +573,39 @@
                 const color = categoryColors[restaurant.カテゴリ];
                 item.style.borderLeftColor = color;
                 
+                // URLリンクの処理
+                let linkHtml = '';
+                if (restaurant.アカウント && restaurant.アカウント.startsWith('http')) {
+                    // URLの種類を判定
+                    let linkText = '詳細を見る';
+                    if (restaurant.アカウント.includes('instagram.com')) {
+                        linkText = 'Instagram';
+                    } else if (restaurant.アカウント.includes('tabelog.com')) {
+                        linkText = 'たべログ';
+                    } else if (restaurant.アカウント.includes('tamoiyanse.net')) {
+                        linkText = '公式サイト';
+                    } else if (restaurant.アカウント.includes('sanbyakuya.com')) {
+                        linkText = '公式サイト';
+                    }
+                    
+                    linkHtml = `<div class="restaurant-link"><a href="${restaurant.アカウント}" target="_blank">${linkText} →</a></div>`;
+                }
+                
                 item.innerHTML = `
                     <div class="restaurant-name">${restaurant.店名}</div>
                     <div class="restaurant-category" style="background-color: ${color}">${restaurant.カテゴリ}</div>
                     <div class="restaurant-feature">${restaurant.特徴}</div>
                     <div class="restaurant-address">${restaurant.住所}</div>
+                    ${linkHtml}
                 `;
                 
-                // クリックイベント
-                item.addEventListener('click', () => {
+                // クリックイベント（リンク以外の部分をクリックした場合）
+                item.addEventListener('click', (e) => {
+                    // リンクをクリックした場合は地図移動しない
+                    if (e.target.tagName === 'A') {
+                        return;
+                    }
+                    
                     const marker = markers[realIndex];
                     
                     // マップを該当位置に移動
@@ -612,7 +658,8 @@
         });
     </script>
     
-    <!-- Google Maps API - ここにあなたのAPIキーを入力してください -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDt7st4XdGITgULoo9Xpr4DzdRNEeiJ6Xk&callback=initMap" async defer></script>
+    <!-- Google Maps API - YOUR_API_KEYを実際のAPIキーに置き換えてください -->
+    <!-- 例: key=AIzaSyBxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
 </body>
 </html>
